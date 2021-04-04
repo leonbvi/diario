@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Python Getting Started on Heroku</title>
+</head>
+<body onLoad=cargar()>
+
+<h2>Mi diario</h2>
+
+<form id="formulario_alta" method="post" enctype="multipart/form-data">
+  <div>
+    <label>Sentimiento</label>
+    <input type="text" id="sentimiento"/>
+  </div>
+  <div>
+    <label>Descripción</label>
+    <textarea id="descripcion" rows="10"></textarea>  
+  </div>
+  <div>
+    <label>Fecha</label>
+    <input type="date" id="fecha"/>
+  </div>  
+  <div>
+    <label>Imagen</label>
+    <input type="file" id="imagen" accept="image/*"/>
+  </div>   
+</form>
+<button onclick="guardar()">
+  Nuevo
+</button>
+
+<div>
+<table>
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Sentimiento</th>
+      <th>descripcion</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="contenido">
+  </tbody>
+</table>
+
+</div>
+<script>
+
+const $tabla = document.getElementById('datos');
+
+function cargar(){
+  fetch("lista/")
+    .then(response => response.json())
+    .then(data => {
+      formar_tabla(data.diario);      
+    });
+}
+
+function formar_tabla(data){
+  contenido.innerHTML = '';
+  for(let valor of data){
+    contenido.innerHTML += 
+              `
+              <tr>
+                <td>${valor.fecha}</td>
+                <td>${valor.sentimiento}</td>
+                <td>${valor.descripcion}</td>
+              </tr>
+              `
+  }
+}
+
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function guardar(){
+  var imagen = document.getElementById('imagen');
+  var foto = {
+    uri : imagen.baseURI,
+    name : imagen.files[0].name,
+    type : imagen.files[0].type
+  }
+  let data = {
+    sentimiento : document.getElementById('sentimiento').value,
+    descripcion : document.getElementById('descripcion').value,
+    fecha : document.getElementById('fecha').value,
+    imagen : imagen.files[0].name,
+  };
+ 
+  fetch("crear/", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }  
+  }).then( response => response.json() )
+  .then(data => {
+      insertar_linea(data.ultimo);      
+    })
+}
+
+function insertar_linea(ultimo){
+  console.log(ultimo)
+  contenido.innerHTML = 
+              `
+              <tr>
+                <td>`+ultimo[0].fecha+`</td>
+                <td>`+ultimo[0].sentimiento+`</td>
+                <td>`+ultimo[0].descripcion+`</td>
+              </tr>
+              `+contenido.innerHTML
+    
+}
+
+</script>
+</body>
+</html>
